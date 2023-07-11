@@ -1,0 +1,119 @@
+﻿@page "/"
+@inject HttpClient client;
+
+<h1>Minhas Tarefas</h1>
+
+<hr />
+
+@if (listaTarefas ==  null)
+{
+    <div class="alert alert-warning" role="alert">
+        As tarefas estão sendo carregas.
+    </div>
+}else if (!listaTarefas.Any())
+{
+    <div class="alert alert-info" role="alert">
+        Não existem dados para ser exibidos.
+    </div>
+}
+else
+{
+    <table class="table table-striped table-hover table-sm table-primary">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Titulo</th>
+                <th>Descricao</th>
+                <th>prioridade</th>
+                <th>Concluida</th>
+                <th>DataCriacao</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in listaTarefas)
+            {
+                <tr>
+                    <td><button @onclick="@(() => ExcluirTarefa(@item.Id))" class="btn btn-danger"><i class="oi oi-trash"></i></button></td>
+                    <td>@item.Id.ToString()</td>
+                    <td>@item.Titulo</td>
+                    <td>@item.Descricao</td>
+                    <td>@item.Prioridade</td>
+                    <td> <input type="checkbox" @bind="item.Concluida" /> - @item.Concluida</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="form-group">
+    <div class="row">
+        <label>Titulo</label>
+        <input type="text" placeholder="Digite o título..." @bind="titulo" />
+    </div>
+
+    <div class="row">
+        <label>Descroção</label>
+        <input type="text" placeholder="Digite sua descrição..." @bind="descricao" />
+    </div>  
+
+    <div class="row">
+        <label>Prioridade</label>
+        <input type="number" placeholder="Digite sua prioridade..." @bind="prioridade" />
+    </div>
+
+    <hr />
+
+    <div class="row">
+        <button class="btn btn-primary" @onclick="NovaTarefa">Salvar Tarefa</button>
+    </div>
+</div>
+
+@code {
+    //Chama o metodo responsável por ler primeiramente o conteúdo que esta dentro dele
+    // é uma especie de ready do jquery
+    protected override async Task OnInitializedAsync()
+    {
+        listaTarefas = await client.GetFromJsonAsync<List<Tarefa>>("dados/tarefas.json");
+    }
+
+
+    string titulo = string.Empty;
+    string descricao = string.Empty;
+    int prioridade = 0;
+
+    public class Tarefa
+    {
+        public Guid Id { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Descricao { get; set; } = string.Empty;
+        public int Prioridade { get; set; }
+        public bool Concluida { get; set; }
+        public DateTime DataCriacao { get; set; }
+    }
+
+    List<Tarefa> listaTarefas = new List<Tarefa>();
+
+    private void NovaTarefa()
+    {
+        if (!string.IsNullOrWhiteSpace(titulo) && !string.IsNullOrWhiteSpace(descricao))
+        {
+            listaTarefas.Add(new Tarefa
+            {
+                Id = Guid.NewGuid(),
+                Titulo = titulo,
+                Descricao = descricao,
+                Prioridade = prioridade,
+                DataCriacao = DateTime.Now
+            });
+
+            titulo = string.Empty;
+            descricao = string.Empty;
+            prioridade = 0;
+        }
+    }
+
+    public void ExcluirTarefa(Guid id)
+    {
+        listaTarefas.Remove(listaTarefas.First(x => x.Id == id));
+    }
+}
